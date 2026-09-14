@@ -1,0 +1,30 @@
+# Local recovery archives
+/backup/
+*.bak
+*.orig
+*~
+
+# Operating system files
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# Editor temporary files
+*.swp
+*.swo
+
+# Python bytecode, caches, and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+!.env.sample
