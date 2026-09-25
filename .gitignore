@@ -3,6 +3,8 @@
 *.zip
 *.textClipping
 /validation/results.txt
+# Local model-switching tests
+/validation/test_model_switch.py
 *.bak
 *.orig
 *~

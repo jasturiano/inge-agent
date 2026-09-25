@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Switch existing Inge model mappings without changing the Haiku scout or permissions."""
+import argparse
+from pathlib import Path
+import re
+import sys
+
+ROLES = ('inge', 'inge-worker', 'inge-expert', 'inge-worker-strong')
+PROVIDERS = {'copilot': 'github-copilot/', 'litellm': 'litellm/'}
+MODEL = re.compile(rb'^(?P<comment># *)?model: *(?P<id>[^\s#]+)(?: *#.*)?$')
+
+
+def switch_content(data, provider):
+    """Validate frontmatter and toggle model comments, preserving all other bytes."""
+    lines = data.splitlines(keepends=True)
+    if not lines or lines[0].rstrip(b'\r\n') != b'---':
+        raise ValueError('Missing YAML frontmatter')
+    end = next((i for i in range(1, len(lines))
+                if lines[i].rstrip(b'\r\n') == b'---'), None)
+    if end is None:
+        raise ValueError('Unterminated YAML frontmatter')
+    models = [(i, match) for i in range(1, end)
+              if (match := MODEL.fullmatch(lines[i].rstrip(b'\r\n')))]
+    if sum(match['comment'] is None for _, match in models) != 1:
+        raise ValueError('Expected exactly one active model')
+    if any(b'haiku' in match['id'].lower() for _, match in models):
+        return data
+    prefix = PROVIDERS[provider].encode()
+    selected = [i for i, match in models if match['id'].strip(b'\'"').startswith(prefix)]
+    if len(selected) != 1:
+        raise ValueError(f'Expected exactly one existing {provider} model mapping')
+    for i, match in models:
+        if i == selected[0] and match['comment'] is not None:
+            lines[i] = lines[i][len(match['comment']):]
+        elif i != selected[0] and match['comment'] is None:
+            lines[i] = b'# ' + lines[i]
+    return b''.join(lines)
+
+
+def main():
+    """Validate every target before writing; default to this source checkout."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('provider', choices=PROVIDERS)
+    parser.add_argument('--agents-dir', type=Path,
+                        default=Path(__file__).resolve().parents[1] / 'opencode_global/agents',
+                        help='Agent directory to update (default: this checkout)')
+    args = parser.parse_args()
+    changes = []
+    try:
+        for role in ROLES:
+            path = args.agents_dir.expanduser() / f'{role}.md'
+            if path.is_symlink() or not path.is_file():
+                raise ValueError(f'Expected a regular, non-symlink agent file: {path}')
+            original = path.read_bytes()
+            try:
+                updated = switch_content(original, args.provider)
+            except ValueError as error:
+                raise ValueError(f'{path}: {error}') from error
+            if original != updated:
+                changes.append((path, updated))
+        for path, updated in changes:
+            path.write_bytes(updated)
+            print(f'Updated {path}')
+    except (OSError, ValueError) as error:
+        parser.exit(2, f'Cannot switch models: {error}\n')
+    print(f'{args.provider}: {len(changes)} file(s) updated. Haiku/scout unchanged.')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

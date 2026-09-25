@@ -320,6 +320,29 @@ The five OpenCode agent files contain the configured model IDs and commented
 alternatives retained from the original kit. They are examples of your prior mapping,
 not a claim of provider availability. Confirm access before use.
 
+Switch the four main roles to their existing provider mappings from this checkout:
+
+```bash
+./scripts/change_inge_models copilot
+./scripts/change_inge_models litellm
+```
+
+The selected model line is uncommented and other active model lines are commented.
+Haiku models and inge-scout.md remain untouched, as do permissions and agent prose.
+All four files are validated before editing; a missing mapping stops the switch.
+Repeated selection of the same provider makes no further changes.
+
+To update an installed copy, explicitly select its agent directory:
+
+```bash
+./scripts/change_inge_models copilot --agents-dir "$HOME/.config/opencode/agents"
+```
+
+Use your actual installation path if different. The default only updates this
+checkout. Add this checkout's scripts directory to PATH to invoke
+`change_inge_models copilot` from anywhere. Restart or reload your harness afterward;
+the script does not contact providers, change a running session, or modify opencode.json.
+
 Role selection follows [routing.md](repo/inge/references/routing.md); native mapping,
 permissions and manual changes are in [the OpenCode adapter](repo/inge/adapters/opencode.md).
 Update coordinator/worker together for routine-tier consistency, expert/strong-worker
