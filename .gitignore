@@ -1,5 +1,8 @@
 # Local recovery archives
 /backup/
+*.zip
+*.textClipping
+/validation/results.txt
 *.bak
 *.orig
 *~

@@ -1,56 +1,112 @@
 # Validation
 
-[Back to README](../README.md) · [Live behavior checklist](../validation/BEHAVIOR.md)
+[Back to README](../README.md) · [Behavior evaluations](../validation/BEHAVIOR.md)
 
-Run from the distribution root:
+Agent-safe static checks (no Git calls or metadata writes):
+
+```bash
+python3 validation/validate.py --policy-only
+```
+
+Human-maintainer-only full suites, run manually from the distribution root. They
+initialize disposable Git repositories and may create commits/worktrees or synthetic
+Git metadata. Inge must not run these under the standing no-Git-writes policy:
 
 ```bash
 python3 validation/validate.py
+python3 validation/test_installation_check.py
+python3 validation/security_check.py
 ```
 
-Requirements: Python 3, Git, and Ruby's standard YAML parser. The tests do not need
-OpenCode, providers, the optional `backup/` folder, or a Git checkout of Dilbert.
-Temporary Git commits/worktrees exist only inside disposable test fixtures.
+Requirements: Python 3, Git and Ruby's standard YAML parser. The suite makes no
+provider calls and changes no installed configuration. Git commits/worktrees and
+test notes exist only in disposable fixtures. Backup archives are not dependencies.
 
-## Latest local results
+## Executed results
 
-2026-09-12, final cleanup verification: **12 tests passed**. The suite was also
-run from a disposable source-only copy with no backup archives. This is a fresh run
-against the cleaned layout, not a reused historical assertion count.
+2026-09-25 helper follow-up: seven --policy-only checks and thirteen selected
+security regression checks passed. Four new checks cover failed discovery with an
+ancestor Git marker, genuine non-Git fallback, successful nested checkout resolution,
+and inventory exit 2 for a skipped FIFO. Git discovery/marker responses were mocked;
+no Git commands or metadata writes were performed. Existing containment, private-note,
+bounded-read, timeout, diagnostic escaping and budget checks also passed. The full
+Git-mutating suites were not rerun. OpenCode was not found on PATH, so live permission
+and prompt-injection checks remain NOT RUN.
 
-| Area | Deterministic checks |
+2026-09-25 stash exception: seven --policy-only checks passed, including approved
+stash push/pop/list patterns and continued denial of commit/merge/push/pull and other
+stash operations. No Git commands or live OpenCode tests were run for this update.
+
+2026-09-24 no-Git-writes policy: seven static policy/configuration/documentation
+checks passed with --policy-only. Full Git-mutating suites were not rerun. Earlier
+40-test results below describe the previous hardening checkpoint, not this revision.
+
+2026-09-24 hardening verification: **40 tests passed** (19 distribution, 7 inventory,
+14 security regressions). Former attack-characterization fixtures now require safe
+behavior. Live OpenCode injection/permission drills remain NOT RUN.
+
+2026-09-24 rename verification: **19 distribution tests and 7 installation-audit
+tests passed**. Active files, paths, commands, roles and discovery use `inge` only.
+Cleanup-audit fixtures cover coexisting old/new agents, named legacy backups,
+local and ancestor leftovers, stale environment/config/instruction references,
+partial non-Git installs, redacted output and unchanged file snapshots.
+
+2026-09-24: **18 tests passed** after the portable-core and shared-installation change.
+The initial review found 11/12 passing: the source-hygiene test expected ZIP,
+textClipping and validation-results exclusions absent from .gitignore. Those intended
+local-artifact exclusions are now restored. The older 2026-09-12 result is historical,
+not proof of the current checkout.
+
+| Area | Deterministic coverage |
 |---|---|
-| Roles and permissions | Exactly five roles; reader edit deny, writer edit ask, all Bash ask; router's ordered four-role Task allowlist and child Task deny |
-| Models | One active model and requested commented alternative per agent; no guessed Terra pin |
-| Commands | Main command plus four aliases, all target dilbert with arguments and no model overrides; no duplicate singular directories |
-| Documentation | Shared reference paths and local Markdown links, including README drill anchors, resolve |
-| Legacy capability coverage | All sixteen stage names, important argument contracts and artifact paths remain documented; static contract checks only |
-| Source hygiene | Backups, ZIPs, generated results, caches and macOS clutter ignored; actual distribution sources stay visible to Git |
-| Note creation | Correct installed repository from another cwd and paths with spaces; valid maximum-length ID; no Git initialization |
-| Artifact continuity | Creating a compact note preserves existing answered questionnaire, scenarios, phase and recon notes; duplicate notes cannot overwrite decisions |
-| Path safety | Unsafe IDs, traversal, and symlink escapes/collisions rejected without clobbering external files |
-| Actual-diff scope | Staged, unstaged and new work distinguished from committed changes, including edits that cancel in the combined HEAD diff |
-| Unborn Git repository | Staged, unstaged and new files inspectable without HEAD |
-| Linked worktree excludes | Exact README rules use the resolved exclude file, preserve prior rules and unrelated commands, and do not assume notes transferred through Git |
+| OpenCode permissions | Five roles; read-only readers, approval-gated writers, four-child allowlist and no child delegation |
+| Model configuration | One active provider/model identifier per role; structural checks do not certify provider availability |
+| Commands and docs | Five command aliases target Inge; no command model overrides; local links/anchors and reference paths resolve |
+| Legacy procedures | All sixteen stage contracts retained; static checks only |
+| Shared discovery | Explicit/environment trust selection; local/nearer kits cannot replace selected core; incomplete selection errors |
+| Local state | Optional local profile does not shadow shared core; note destination independent of helper installation and shell cwd |
+| Worktrees and non-Git | Linked worktree targeting, explicit framework outside ancestor tree, spaces, existing non-Git directory without initialization |
+| Diagnostic behavior | Read-only execution without bytecode cache, missing bundled references, known optional-skill dependency gaps and duplicate directories |
+| Task helper | Explicit target required; invalid/nonexistent targets and unsafe IDs rejected; duplicate and symlink collisions do not overwrite |
+| Continuity | Existing numbered artifacts and accepted answers preserved |
+| Git evidence | Staged, unstaged and untracked scope; canceling diffs; unborn repository; resolved worktree excludes preserve unrelated settings |
 
-The cleanup also verified the retained archives' integrity and compared active agent,
-command, workflow, profile and helper files against the pre-cleanup snapshot: their
-contents and permission configuration were unchanged. Historical reports and patches
-are recovery data inside backup/pre-cleanup.zip, not inputs to the current test suite.
+The doctor checks filesystem state and a small curated set of skill dependency
+edges. It is not a generic skill interpreter, permission validator or runtime monitor.
+It reports runtime capabilities as unverified and never connects to providers.
 
-## Static checks versus live behavior
+## Runtime limitations
 
-These tests validate configuration, procedures and deterministic helper/Git behavior.
-They do not prove that an LLM asks the right question, preserves every section, obeys
-phase boundaries, or that a particular OpenCode build enforces child approvals.
+The [security review](SECURITY-REVIEW.md) records original findings and current
+remediation status. `python3 validation/security_check.py` now requires safe behavior:
+rejection/containment of the original attacks, bounded reads, controlled timeout
+failures and fail-closed unsupported platforms. Passing does not prove live model
+injection resistance. Older characterization tests have been replaced, not retained
+as requirements for insecure behavior.
 
-OpenCode was unavailable in the validation environment. Installed discovery paths,
-effective merged permissions, provider availability, parent/child models, skill discovery,
-rejected-edit behavior and manual quota recovery remain unverified at runtime. The original
-model IDs were inspected previously; no provider calls were made to validate availability.
+The separate installation-inventory suite checks global current/customized/changed
+definitions, nested local installs, profile-only worktrees, shared frameworks,
+legacy command directories, symlink traversal avoidance and source-checkout exclusion.
+Fixture snapshots verify that inventory leaves file contents unchanged.
 
-Use [Drill I](DRILLS.md#drill-i-routing-and-rejected-edit-smoke-test) and the live behavior
-checklist in a disposable repository with your actual installation. Inspect effective
-restrictions before testing. Do not trigger production operations or spend across accounts
-merely to claim a passed quota test. No global installation, production query, deployment,
-or real application integration was performed during this cleanup.
+OpenCode is unavailable in this environment. Native discovery, effective merged
+permissions, loaded skills, parent/child model identity, denied-edit behavior, and
+quota recovery remain live checks. Existing model examples were retained without
+provider probes. The generic adapter is a manual capability contract, not a tested
+native integration for another harness.
+
+The framework specifies natural skill/model announcements and handoff evidence.
+No automatic dispatch-event collector or guaranteed runtime model identification
+has been implemented. When runtime metadata is unavailable, the agent must label
+configured/unknown identity rather than claiming confirmation.
+
+Behavioral quality cannot be established by Markdown presence or the helper tests.
+Use the comparison protocol in validation/BEHAVIOR.md: identical scenarios and
+snapshots, repeat trials, compare against the plain harness and the previous baseline,
+and grade scope, correctness, verification and communication from actual results.
+No live behavioral scores or multi-harness equivalence are claimed.
+
+Use [Drill I](DRILLS.md#drill-i-routing-and-rejected-edit-smoke-test) for the native
+approval boundary, and the shared/capability exercises for path and fallback behavior.
+No production operations, deliberate quota exhaustion or cross-account probes are
+needed to establish these checks.
